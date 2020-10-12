@@ -1,5 +1,8 @@
 package ticket
 
+//
+// State
+//
 type State string
 
 const (

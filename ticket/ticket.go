@@ -1,14 +1,27 @@
 package ticket
 
+import (
+	"time"
+)
+
 //
 // Ticket
 //
 type Ticket struct {
-	State State
+	State 				State
+
+	CreatedAt 			time.Time
+	CancelledAt 		time.Time
+	AcceptedAt 			time.Time
+	PreparedAt 			time.Time
+	ReadyForPickUpAt 	time.Time
 }
 
 func NewTicket() *Ticket {
-	return &Ticket{State: Created}
+	return &Ticket{
+		State: Created,
+		CreatedAt: DefaultClock.Now(),
+	}
 }
 
 //
@@ -26,6 +39,8 @@ func (tic *Ticket) Cancel() error {
 	case Prepared:
 		return CancelFromPreparedIsNotValid
 	}
+
+	tic.CancelledAt = DefaultClock.Now()
 
 	return nil
 }
@@ -47,6 +62,8 @@ func (tic *Ticket) Accept() error {
 
 	}
 
+	tic.AcceptedAt = DefaultClock.Now()
+
 	return nil
 }
 
@@ -66,9 +83,14 @@ func (tic *Ticket) Prepare() error {
 		return PrepareFromReadyToPickUpIsNotValid
 	}
 
+	tic.PreparedAt = DefaultClock.Now()
+
 	return nil
 }
 
+//
+// ReadyToPickUp
+//
 func (tic *Ticket) ReadyToPickUp() error {
 	switch tic.State {
 	
@@ -81,6 +103,8 @@ func (tic *Ticket) ReadyToPickUp() error {
 	case Prepared, ReadyToPickUp:
 		tic.State = ReadyToPickUp
 	}
+
+	tic.ReadyForPickUpAt = DefaultClock.Now()
 
 	return nil
 }
