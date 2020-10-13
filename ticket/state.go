@@ -6,9 +6,9 @@ package ticket
 type State string
 
 const (
-	Created State = "Created"
-	Accepted State = "Accepted"
-	Prepared State = "Prepared"
-	ReadyToPickUp State = "ReadyToPickUp"
-	Cancelled State = "Cancelled"
+	Created       State = "CREATED"
+	Accepted      State = "ACCEPTED"
+	Prepared      State = "PREPARED"
+	ReadyToPickUp State = "READY_FOR_PICKUP"
+	Cancelled     State = "CANCELLED"
 )
