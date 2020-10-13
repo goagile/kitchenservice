@@ -1,8 +1,11 @@
 package repo
 
+import "github.com/goagile/kitchenservice/ticket"
+
 //
 // TicketRepo
 //
 type TicketRepo interface {
-	NextID() int64
+	NextID() ticket.TicketID
+	Save() error
 }

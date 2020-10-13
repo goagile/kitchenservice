@@ -5,21 +5,32 @@ import (
 )
 
 //
+// TicketID
+//
+type TicketID int64
+
+//
 // Ticket
 //
 type Ticket struct {
-	State 				State
+	ID TicketID
 
-	CreatedAt 			time.Time
-	CancelledAt 		time.Time
-	AcceptedAt 			time.Time
-	PreparedAt 			time.Time
-	ReadyForPickUpAt 	time.Time
+	State State
+
+	CreatedAt        time.Time
+	CancelledAt      time.Time
+	AcceptedAt       time.Time
+	PreparedAt       time.Time
+	ReadyForPickUpAt time.Time
 }
 
-func NewTicket() *Ticket {
+//
+// New
+//
+func New(id TicketID) *Ticket {
 	return &Ticket{
-		State: Created,
+		ID:        id,
+		State:     Created,
 		CreatedAt: DefaultClock.Now(),
 	}
 }
@@ -29,12 +40,12 @@ func NewTicket() *Ticket {
 //
 func (tic *Ticket) Cancel() error {
 	switch tic.State {
-	
+
 	case Created, ReadyToPickUp:
 		tic.State = Cancelled
 
 	case Accepted:
-		return CancelFromAcceptedIsNotValid	
+		return CancelFromAcceptedIsNotValid
 
 	case Prepared:
 		return CancelFromPreparedIsNotValid
@@ -72,13 +83,13 @@ func (tic *Ticket) Accept() error {
 //
 func (tic *Ticket) Prepare() error {
 	switch tic.State {
-	
+
 	case Created:
 		return PrepareFromCreatedIsNotValid
 
 	case Accepted, Prepared:
 		tic.State = Prepared
-	
+
 	case ReadyToPickUp:
 		return PrepareFromReadyToPickUpIsNotValid
 	}
@@ -93,10 +104,10 @@ func (tic *Ticket) Prepare() error {
 //
 func (tic *Ticket) ReadyToPickUp() error {
 	switch tic.State {
-	
+
 	case Created:
 		return ReadyToPickUpFromCreatedIsNotValid
-	
+
 	case Accepted:
 		return ReadyToPickUpFromAcceptedIsNotValid
 

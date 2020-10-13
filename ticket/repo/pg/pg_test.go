@@ -5,11 +5,16 @@ import (
 	"log"
 	"os"
 	"testing"
+
+	"github.com/goagile/kitchenservice/ticket"
 )
+
+var repo = NewTicketRepo()
 
 func init() {
 	connect()
 	resetTicketsIDs()
+	removeAllTickets()
 }
 
 func connect() {
@@ -20,10 +25,19 @@ func connect() {
 	}
 }
 
+const alterSeq = "ALTER SEQUENCE tickets_id_seq RESTART WITH 1"
+
 func resetTicketsIDs() {
-	q := "ALTER SEQUENCE tickets_id_seq RESTART WITH 1"
-	if _, err := DB.Exec(q); err != nil {
+	if _, err := DB.Exec(alterSeq); err != nil {
 		log.Fatalf("DB Reset Sequence err: %v", err)
+	}
+}
+
+const deleteAllTickets = "DELETE FROM tickets"
+
+func removeAllTickets() {
+	if _, err := DB.Exec(deleteAllTickets); err != nil {
+		log.Fatalf("DB Remove All Tickets err: %v", err)
 	}
 }
 
@@ -31,10 +45,9 @@ func resetTicketsIDs() {
 // NextID
 //
 func Test_NextID(t *testing.T) {
-	want := int64(1)
-	r := NewTicketRepo()
+	want := ticket.TicketID(1)
 
-	got, err := r.NextID()
+	got, err := repo.NextID()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,4 +55,23 @@ func Test_NextID(t *testing.T) {
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
 	}
+}
+
+//
+// Save
+//
+func Test_Save_As_Insert(t *testing.T) {
+	// want := TicketID(1)
+
+	id, _ := repo.NextID()
+	tic := ticket.New(id)
+
+	err := repo.Save(tic)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// if want != got {
+	// 	t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
+	// }
 }
