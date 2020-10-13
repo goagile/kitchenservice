@@ -2,8 +2,50 @@ package ticket
 
 import (
 	"testing"
-	"time"
+
+	"github.com/goagile/kitchenservice/utils"
 )
+
+func init() {
+	DefaultClock = utils.NewFakeClock(utils.TestDateTime)
+}
+
+//
+// Eq
+//
+func Test_Eq_True(t *testing.T) {
+	want := true
+	a := New(TicketID(1))
+	a.Accept()
+	a.Prepare()
+	a.ReadyToPickUp()
+
+	b := New(TicketID(1))
+	b.Accept()
+	b.Prepare()
+	b.ReadyToPickUp()
+
+	got := a.Eq(b)
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v", want, got)
+	}
+}
+
+func Test_Eq_False(t *testing.T) {
+	want := false
+	a := New(TicketID(1))
+	a.Accept()
+	a.Prepare()
+
+	b := New(TicketID(1))
+
+	got := a.Eq(b)
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v", want, got)
+	}
+}
 
 //
 // Created
@@ -20,8 +62,7 @@ func Test_NewTicket_Has_Created_State(t *testing.T) {
 }
 
 func Test_NewTicket_CreatedAt(t *testing.T) {
-	DefaultClock = newFakeClock(TestDateTime)
-	want := TestDateTime
+	want := utils.TestDateTime
 	tic := New(TicketID(1))
 
 	got := tic.CreatedAt
@@ -85,8 +126,7 @@ func Test_PreparedTicket_May_Be_Cancelled(t *testing.T) {
 }
 
 func Test_CancelledAt(t *testing.T) {
-	DefaultClock = newFakeClock(TestDateTime)
-	want := TestDateTime
+	want := utils.TestDateTime
 	tic := New(TicketID(1))
 	tic.Cancel()
 
@@ -151,8 +191,7 @@ func Test_AcceptedFromReadyToPickUpIsNotValid(t *testing.T) {
 }
 
 func Test_AcceptedAt(t *testing.T) {
-	DefaultClock = newFakeClock(TestDateTime)
-	want := TestDateTime
+	want := utils.TestDateTime
 	tic := New(TicketID(1))
 	tic.Accept()
 
@@ -217,8 +256,7 @@ func Test_PrepareFromReadyToPickUpIsNotValid(t *testing.T) {
 }
 
 func Test_PreparedAt(t *testing.T) {
-	DefaultClock = newFakeClock(TestDateTime)
-	want := TestDateTime
+	want := utils.TestDateTime
 	tic := New(TicketID(1))
 	tic.Accept()
 	tic.Prepare()
@@ -284,8 +322,7 @@ func Test_ReadyToPickUpFromAcceptedIsNotValid(t *testing.T) {
 }
 
 func Test_ReadyForPickUpAt(t *testing.T) {
-	DefaultClock = newFakeClock(TestDateTime)
-	want := TestDateTime
+	want := utils.TestDateTime
 	tic := New(TicketID(1))
 	tic.Accept()
 	tic.Prepare()
@@ -296,24 +333,4 @@ func Test_ReadyForPickUpAt(t *testing.T) {
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v", want, got)
 	}
-}
-
-//
-// newFakeClock
-//
-func newFakeClock(dt time.Time) *fakeClock {
-	return &fakeClock{dt}
-}
-
-var TestDateTime = time.Date(2020, time.October, 13, 23, 30, 10, 0, time.UTC)
-
-type fakeClock struct {
-	dt time.Time
-}
-
-//
-// Now
-//
-func (fc *fakeClock) Now() time.Time {
-	return fc.dt
 }

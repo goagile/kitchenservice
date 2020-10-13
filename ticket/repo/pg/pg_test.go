@@ -5,16 +5,21 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/goagile/kitchenservice/ticket"
+	"github.com/goagile/kitchenservice/utils"
 )
 
 var repo = NewTicketRepo()
+
+var TestDateTime = time.Date(2020, time.October, 13, 23, 30, 10, 0, time.UTC)
 
 func init() {
 	connect()
 	resetTicketsIDs()
 	removeAllTickets()
+	ticket.DefaultClock = utils.NewFakeClock(TestDateTime)
 }
 
 func connect() {
@@ -45,6 +50,7 @@ func removeAllTickets() {
 // NextID
 //
 func Test_NextID(t *testing.T) {
+	resetTicketsIDs()
 	want := ticket.TicketID(1)
 
 	got, err := repo.NextID()
@@ -61,17 +67,66 @@ func Test_NextID(t *testing.T) {
 // Save
 //
 func Test_Save_As_Insert(t *testing.T) {
-	// want := TicketID(1)
+	resetTicketsIDs()
+
+	want := true
 
 	id, _ := repo.NextID()
-	tic := ticket.New(id)
+	a := ticket.New(id)
+	a.Accept()
+	a.Prepare()
+	a.ReadyToPickUp()
+	a.Cancel()
 
-	err := repo.Save(tic)
+	if err := repo.Save(a); err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := repo.Find(id)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// if want != got {
-	// 	t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
-	// }
+	got := a.Eq(b)
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
+	}
+}
+
+func Test_Save_As_Update(t *testing.T) {
+	resetTicketsIDs()
+
+	want := true
+
+	id, _ := repo.NextID()
+	a := ticket.New(id)
+
+	if err := repo.Save(a); err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := repo.Find(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b.Accept()
+	b.Prepare()
+	b.ReadyToPickUp()
+	b.Cancel()
+
+	if err := repo.Save(b); err != nil {
+		t.Fatal(err)
+	}
+
+	c, err := repo.Find(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := c.Eq(b)
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
+	}
 }

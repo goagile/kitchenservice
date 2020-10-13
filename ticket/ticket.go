@@ -1,7 +1,10 @@
 package ticket
 
 import (
+	"fmt"
 	"time"
+
+	"github.com/goagile/kitchenservice/utils"
 )
 
 //
@@ -13,10 +16,8 @@ type TicketID int64
 // Ticket
 //
 type Ticket struct {
-	ID TicketID
-
-	State State
-
+	ID               TicketID
+	State            State
 	CreatedAt        time.Time
 	CancelledAt      time.Time
 	AcceptedAt       time.Time
@@ -33,6 +34,39 @@ func New(id TicketID) *Ticket {
 		State:     Created,
 		CreatedAt: DefaultClock.Now(),
 	}
+}
+
+//
+// String
+//
+func (tic *Ticket) String() string {
+	return fmt.Sprintf(
+		"Ticket:\n"+
+			"\tID:%v\n"+
+			"\tState:%v\n"+
+			"\tCreatedAt:%v\n"+
+			"\tPreparedAt:%v\n"+
+			"\tReadyForPickUpAt:%v\n"+
+			"\tCancelledAt:%v\n",
+		tic.ID,
+		tic.State,
+		tic.CreatedAt,
+		tic.PreparedAt,
+		tic.ReadyForPickUpAt,
+		tic.CancelledAt,
+	)
+}
+
+//
+// Eq
+//
+func (tic *Ticket) Eq(other *Ticket) bool {
+	return tic.ID == other.ID &&
+		tic.State == other.State &&
+		utils.DateTimeEq(tic.AcceptedAt, other.AcceptedAt) &&
+		utils.DateTimeEq(tic.PreparedAt, other.PreparedAt) &&
+		utils.DateTimeEq(tic.ReadyForPickUpAt, other.ReadyForPickUpAt) &&
+		utils.DateTimeEq(tic.CancelledAt, other.CancelledAt)
 }
 
 //
