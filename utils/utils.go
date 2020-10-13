@@ -17,9 +17,27 @@ func DateTimeEq(a, b time.Time) bool {
 }
 
 //
-// TestDateTime
+// Clock
 //
-var TestDateTime = time.Date(2020, time.October, 13, 23, 30, 10, 0, time.UTC)
+type Clock interface {
+	Now() time.Time
+}
+
+//
+// NewSystemClock
+//
+func NewSystemClock() *sysclock {
+	return &sysclock{}
+}
+
+type sysclock struct{}
+
+//
+// Now
+//
+func (c *sysclock) Now() time.Time {
+	return time.Now()
+}
 
 //
 // NewFakeClock
@@ -35,3 +53,12 @@ type fakeClock struct {
 func (fc *fakeClock) Now() time.Time {
 	return fc.dt
 }
+
+//
+// TestDateTime
+//
+var TestDateTime = time.Date(
+	2020, time.October, 13,
+	23, 30, 10, 0,
+	time.UTC,
+)

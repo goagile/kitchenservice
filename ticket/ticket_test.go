@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	DefaultClock = utils.NewFakeClock(utils.TestDateTime)
+	Clock = utils.NewFakeClock(utils.TestDateTime)
 }
 
 //

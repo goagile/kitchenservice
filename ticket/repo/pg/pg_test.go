@@ -14,7 +14,7 @@ func init() {
 	DB = Connected(os.Getenv("KITCHEN_PG"))
 	ResetSeq("tickets_id_seq")
 	DeleteAll("tickets")
-	ticket.DefaultClock = utils.NewFakeClock(utils.TestDateTime)
+	ticket.Clock = utils.NewFakeClock(utils.TestDateTime)
 }
 
 //

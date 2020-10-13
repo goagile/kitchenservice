@@ -1,16 +1,12 @@
 package ticket
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/goagile/kitchenservice/utils"
 )
-
-//
-// TicketID
-//
-type TicketID int64
 
 //
 // Ticket
@@ -26,13 +22,31 @@ type Ticket struct {
 }
 
 //
+// TicketID
+//
+type TicketID int64
+
+//
+// State
+//
+type State string
+
+const (
+	Created       State = "CREATED"
+	Accepted      State = "ACCEPTED"
+	Prepared      State = "PREPARED"
+	ReadyToPickUp State = "READY_FOR_PICKUP"
+	Cancelled     State = "CANCELLED"
+)
+
+//
 // New
 //
 func New(id TicketID) *Ticket {
 	return &Ticket{
 		ID:        id,
 		State:     Created,
-		CreatedAt: DefaultClock.Now(),
+		CreatedAt: Clock.Now(),
 	}
 }
 
@@ -85,7 +99,7 @@ func (tic *Ticket) Cancel() error {
 		return CancelFromPreparedIsNotValid
 	}
 
-	tic.CancelledAt = DefaultClock.Now()
+	tic.CancelledAt = Clock.Now()
 
 	return nil
 }
@@ -107,7 +121,7 @@ func (tic *Ticket) Accept() error {
 
 	}
 
-	tic.AcceptedAt = DefaultClock.Now()
+	tic.AcceptedAt = Clock.Now()
 
 	return nil
 }
@@ -128,7 +142,7 @@ func (tic *Ticket) Prepare() error {
 		return PrepareFromReadyToPickUpIsNotValid
 	}
 
-	tic.PreparedAt = DefaultClock.Now()
+	tic.PreparedAt = Clock.Now()
 
 	return nil
 }
@@ -149,7 +163,29 @@ func (tic *Ticket) ReadyToPickUp() error {
 		tic.State = ReadyToPickUp
 	}
 
-	tic.ReadyForPickUpAt = DefaultClock.Now()
+	tic.ReadyForPickUpAt = Clock.Now()
 
 	return nil
 }
+
+//
+// Errrors
+//
+var (
+	AcceptedFromPreparedIsNotValid      = errors.New("AcceptedFromPreparedIsNotValid")
+	AcceptedFromReadyToPickUpIsNotValid = errors.New("AcceptedFromReadyToPickUpIsNotValid")
+
+	PrepareFromCreatedIsNotValid       = errors.New("PrepareFromCreatedIsNotValid")
+	PrepareFromReadyToPickUpIsNotValid = errors.New("PrepareFromReadyToPickUpIsNotValid")
+
+	ReadyToPickUpFromCreatedIsNotValid  = errors.New("ReadyToPickUpFromCreatedIsNotValid")
+	ReadyToPickUpFromAcceptedIsNotValid = errors.New("ReadyToPickUpFromAcceptedIsNotValid")
+
+	CancelFromAcceptedIsNotValid = errors.New("CancelFromAcceptedIsNotValid")
+	CancelFromPreparedIsNotValid = errors.New("CancelFromPreparedIsNotValid")
+)
+
+//
+// Clock
+//
+var Clock utils.Clock = utils.NewSystemClock()
