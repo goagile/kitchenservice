@@ -1,11 +1,8 @@
 package pg
 
 import (
-	"database/sql"
-	"log"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/goagile/kitchenservice/ticket"
 	"github.com/goagile/kitchenservice/utils"
@@ -13,44 +10,18 @@ import (
 
 var repo = NewTicketRepo()
 
-var TestDateTime = time.Date(2020, time.October, 13, 23, 30, 10, 0, time.UTC)
-
 func init() {
-	connect()
-	resetTicketsIDs()
-	removeAllTickets()
-	ticket.DefaultClock = utils.NewFakeClock(TestDateTime)
-}
-
-func connect() {
-	var err error
-	DB, err = sql.Open("postgres", os.Getenv("KITCHEN_PG"))
-	if err != nil {
-		log.Fatalf("DB Open err: %v", err)
-	}
-}
-
-const alterSeq = "ALTER SEQUENCE tickets_id_seq RESTART WITH 1"
-
-func resetTicketsIDs() {
-	if _, err := DB.Exec(alterSeq); err != nil {
-		log.Fatalf("DB Reset Sequence err: %v", err)
-	}
-}
-
-const deleteAllTickets = "DELETE FROM tickets"
-
-func removeAllTickets() {
-	if _, err := DB.Exec(deleteAllTickets); err != nil {
-		log.Fatalf("DB Remove All Tickets err: %v", err)
-	}
+	DB = Connected(os.Getenv("KITCHEN_PG"))
+	ResetSeq("tickets_id_seq")
+	DeleteAll("tickets")
+	ticket.DefaultClock = utils.NewFakeClock(utils.TestDateTime)
 }
 
 //
 // NextID
 //
 func Test_NextID(t *testing.T) {
-	resetTicketsIDs()
+	ResetSeq("tickets_id_seq")
 	want := ticket.TicketID(1)
 
 	got, err := repo.NextID()
@@ -67,7 +38,7 @@ func Test_NextID(t *testing.T) {
 // Save
 //
 func Test_Save_As_Insert(t *testing.T) {
-	resetTicketsIDs()
+	ResetSeq("tickets_id_seq")
 
 	want := true
 
@@ -95,7 +66,7 @@ func Test_Save_As_Insert(t *testing.T) {
 }
 
 func Test_Save_As_Update(t *testing.T) {
-	resetTicketsIDs()
+	ResetSeq("tickets_id_seq")
 
 	want := true
 
