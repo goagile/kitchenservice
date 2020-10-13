@@ -321,14 +321,14 @@ func Test_ReadyToPickUpFromAcceptedIsNotValid(t *testing.T) {
 	}
 }
 
-func Test_ReadyForPickUpAt(t *testing.T) {
+func Test_ReadyToPickUpAt(t *testing.T) {
 	want := utils.TestDateTime
 	tic := New(TicketID(1))
 	tic.Accept()
 	tic.Prepare()
 	tic.ReadyToPickUp()
 
-	got := tic.ReadyForPickUpAt
+	got := tic.ReadyToPickUpAt
 
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v", want, got)

@@ -47,7 +47,7 @@ const saveQuery = `
 		created_at,
 		accepted_at,
 		prepared_at,
-		ready_for_pickup_at,
+		ready_to_pickup_at,
 		cancelled_at
 	)
 	VALUES($1, $2, $3, $4, $5, $6, $7)
@@ -60,7 +60,7 @@ const saveQuery = `
 		created_at=$3,
 		accepted_at=$4,
 		prepared_at=$5,
-		ready_for_pickup_at=$6,
+		ready_to_pickup_at=$6,
 		cancelled_at=$7
 `
 
@@ -71,7 +71,7 @@ func (r *ticketRepo) Save(tic *ticket.Ticket) error {
 		tic.CreatedAt,
 		tic.AcceptedAt,
 		tic.PreparedAt,
-		tic.ReadyForPickUpAt,
+		tic.ReadyToPickUpAt,
 		tic.CancelledAt,
 	)
 	return err
@@ -86,7 +86,7 @@ const findQuery = `
 		created_at,
 		accepted_at,
 		prepared_at,
-		ready_for_pickup_at,
+		ready_to_pickup_at,
 		cancelled_at
 	FROM tickets 
 	WHERE ticket_id = $1
@@ -100,7 +100,7 @@ func (r *ticketRepo) Find(id ticket.TicketID) (*ticket.Ticket, error) {
 		&tic.CreatedAt,
 		&tic.AcceptedAt,
 		&tic.PreparedAt,
-		&tic.ReadyForPickUpAt,
+		&tic.ReadyToPickUpAt,
 		&tic.CancelledAt,
 	)
 	if err != nil {

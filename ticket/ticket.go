@@ -12,13 +12,13 @@ import (
 // Ticket
 //
 type Ticket struct {
-	ID               TicketID
-	State            State
-	CreatedAt        time.Time
-	CancelledAt      time.Time
-	AcceptedAt       time.Time
-	PreparedAt       time.Time
-	ReadyForPickUpAt time.Time
+	ID              TicketID
+	State           State
+	CreatedAt       time.Time
+	CancelledAt     time.Time
+	AcceptedAt      time.Time
+	PreparedAt      time.Time
+	ReadyToPickUpAt time.Time
 }
 
 //
@@ -60,13 +60,13 @@ func (tic *Ticket) String() string {
 			"\tState:%v\n"+
 			"\tCreatedAt:%v\n"+
 			"\tPreparedAt:%v\n"+
-			"\tReadyForPickUpAt:%v\n"+
+			"\tReadyToPickUpAt:%v\n"+
 			"\tCancelledAt:%v\n",
 		tic.ID,
 		tic.State,
 		tic.CreatedAt,
 		tic.PreparedAt,
-		tic.ReadyForPickUpAt,
+		tic.ReadyToPickUpAt,
 		tic.CancelledAt,
 	)
 }
@@ -79,7 +79,7 @@ func (tic *Ticket) Eq(other *Ticket) bool {
 		tic.State == other.State &&
 		utils.DateTimeEq(tic.AcceptedAt, other.AcceptedAt) &&
 		utils.DateTimeEq(tic.PreparedAt, other.PreparedAt) &&
-		utils.DateTimeEq(tic.ReadyForPickUpAt, other.ReadyForPickUpAt) &&
+		utils.DateTimeEq(tic.ReadyToPickUpAt, other.ReadyToPickUpAt) &&
 		utils.DateTimeEq(tic.CancelledAt, other.CancelledAt)
 }
 
@@ -163,7 +163,7 @@ func (tic *Ticket) ReadyToPickUp() error {
 		tic.State = ReadyToPickUp
 	}
 
-	tic.ReadyForPickUpAt = Clock.Now()
+	tic.ReadyToPickUpAt = Clock.Now()
 
 	return nil
 }
