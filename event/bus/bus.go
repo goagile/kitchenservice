@@ -3,16 +3,31 @@ package bus
 import "github.com/goagile/kitchenservice/event"
 
 //
-// Bus
+// bus
 //
-type Bus struct {
+type Bus interface {
+	Publish(e event.Event)
+	Add(h Handler)
+	AddFunc(f func(e event.Event))
+}
+
+type bus struct {
 	handlers []Handler
+}
+
+//
+// New
+//
+func New() *bus {
+	return &bus{
+		handlers: make([]Handler, 0),
+	}
 }
 
 //
 // Publish
 //
-func (b *Bus) Publish(e event.Event) {
+func (b *bus) Publish(e event.Event) {
 	for _, h := range b.handlers {
 		h.Handle(e)
 	}
@@ -21,14 +36,14 @@ func (b *Bus) Publish(e event.Event) {
 //
 // Add
 //
-func (b *Bus) Add(h Handler) {
+func (b *bus) Add(h Handler) {
 	b.handlers = append(b.handlers, h)
 }
 
 //
 // AddFunc
 //
-func (b *Bus) AddFunc(f func(e event.Event)) {
+func (b *bus) AddFunc(f func(e event.Event)) {
 	b.Add(&funcHandler{f})
 }
 

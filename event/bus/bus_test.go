@@ -11,7 +11,7 @@ import (
 //
 func Test_Bus_Add(t *testing.T) {
 	want := 1
-	bus := &Bus{}
+	bus := New()
 	bus.Add(&funcHandler{})
 
 	got := len(bus.handlers)
@@ -26,7 +26,7 @@ func Test_Bus_Add(t *testing.T) {
 //
 func Test_Bus_AddFunc(t *testing.T) {
 	want := 1
-	bus := &Bus{}
+	bus := New()
 	bus.AddFunc(func(e event.Event) {})
 
 	got := len(bus.handlers)
@@ -41,7 +41,7 @@ func Test_Bus_AddFunc(t *testing.T) {
 //
 func Test_Bus_Publish(t *testing.T) {
 	want := true
-	bus := &Bus{}
+	bus := New()
 
 	got := false
 	bus.AddFunc(func(e event.Event) {

@@ -8,23 +8,24 @@ import (
 	"github.com/goagile/kitchenservice/utils"
 )
 
-var repo = NewTicketRepo()
-
 func init() {
 	DB = Connected(os.Getenv("KITCHEN_PG"))
-	ResetSeq("tickets_id_seq")
-	DeleteAll("tickets")
 	ticket.Clock = utils.NewFakeClock(utils.TestDateTime)
+}
+
+func TestMain(m *testing.M) {
+	ResetSeq("tickets_ticket_id_seq")
+	DeleteAll("tickets")
+	os.Exit(m.Run())
 }
 
 //
 // NextID
 //
 func Test_NextID(t *testing.T) {
-	ResetSeq("tickets_id_seq")
 	want := ticket.TicketID(1)
 
-	got, err := repo.NextID()
+	got, err := TicketRepo.NextID()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,22 +39,25 @@ func Test_NextID(t *testing.T) {
 // Save
 //
 func Test_Save_As_Insert(t *testing.T) {
-	ResetSeq("tickets_id_seq")
-
 	want := true
 
-	id, _ := repo.NextID()
+	id, err := TicketRepo.NextID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	a := ticket.New(id)
 	a.Accept()
 	a.Prepare()
 	a.ReadyToPickUp()
 	a.Cancel()
 
-	if err := repo.Save(a); err != nil {
+	err = TicketRepo.Save(a)
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	b, err := repo.Find(id)
+	b, err := TicketRepo.Find(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,18 +70,21 @@ func Test_Save_As_Insert(t *testing.T) {
 }
 
 func Test_Save_As_Update(t *testing.T) {
-	ResetSeq("tickets_id_seq")
-
 	want := true
 
-	id, _ := repo.NextID()
-	a := ticket.New(id)
-
-	if err := repo.Save(a); err != nil {
+	id, err := TicketRepo.NextID()
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	b, err := repo.Find(id)
+	a := ticket.New(id)
+
+	err = TicketRepo.Save(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := TicketRepo.Find(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,11 +93,12 @@ func Test_Save_As_Update(t *testing.T) {
 	b.ReadyToPickUp()
 	b.Cancel()
 
-	if err := repo.Save(b); err != nil {
+	err = TicketRepo.Save(b)
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	c, err := repo.Find(id)
+	c, err := TicketRepo.Find(id)
 	if err != nil {
 		t.Fatal(err)
 	}

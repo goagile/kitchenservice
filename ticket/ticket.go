@@ -13,6 +13,7 @@ import (
 //
 type Ticket struct {
 	ID              TicketID
+	OrderID         int64
 	State           State
 	CreatedAt       time.Time
 	CancelledAt     time.Time
@@ -57,12 +58,14 @@ func (tic *Ticket) String() string {
 	return fmt.Sprintf(
 		"Ticket:\n"+
 			"\tID:%v\n"+
+			"\tOrderID:%v\n"+
 			"\tState:%v\n"+
 			"\tCreatedAt:%v\n"+
 			"\tPreparedAt:%v\n"+
 			"\tReadyToPickUpAt:%v\n"+
 			"\tCancelledAt:%v\n",
 		tic.ID,
+		tic.OrderID,
 		tic.State,
 		tic.CreatedAt,
 		tic.PreparedAt,
@@ -80,7 +83,8 @@ func (tic *Ticket) Eq(other *Ticket) bool {
 		utils.DateTimeEq(tic.AcceptedAt, other.AcceptedAt) &&
 		utils.DateTimeEq(tic.PreparedAt, other.PreparedAt) &&
 		utils.DateTimeEq(tic.ReadyToPickUpAt, other.ReadyToPickUpAt) &&
-		utils.DateTimeEq(tic.CancelledAt, other.CancelledAt)
+		utils.DateTimeEq(tic.CancelledAt, other.CancelledAt) &&
+		tic.OrderID == other.OrderID
 }
 
 //
