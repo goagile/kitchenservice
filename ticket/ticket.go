@@ -61,6 +61,7 @@ func (tic *Ticket) String() string {
 			"\tOrderID:%v\n"+
 			"\tState:%v\n"+
 			"\tCreatedAt:%v\n"+
+			"\tAcceptedAt:%v\n"+
 			"\tPreparedAt:%v\n"+
 			"\tReadyToPickUpAt:%v\n"+
 			"\tCancelledAt:%v\n",
@@ -68,6 +69,7 @@ func (tic *Ticket) String() string {
 		tic.OrderID,
 		tic.State,
 		tic.CreatedAt,
+		tic.AcceptedAt,
 		tic.PreparedAt,
 		tic.ReadyToPickUpAt,
 		tic.CancelledAt,

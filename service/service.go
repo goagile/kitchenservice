@@ -10,8 +10,14 @@ import (
 	"github.com/goagile/kitchenservice/ticket/repo/pg"
 )
 
+//
+// DomainEvents
+//
 var DomainEvents bus.Bus
 
+//
+// TicketRepo
+//
 var TicketRepo repo.TicketRepo
 
 func init() {
@@ -43,7 +49,34 @@ func CreateTicket(details TicketDetails) error {
 	}
 
 	DomainEvents.Publish(event.TicketCreated{
-		TicketID: id,
+		TicketID: tic.ID,
+		OrderID:  tic.OrderID,
+	})
+
+	return nil
+}
+
+//
+// AcceptTicket
+//
+func AcceptTicket(id ticket.TicketID) error {
+	tic, err := TicketRepo.Find(id)
+	if err != nil {
+		return err
+	}
+
+	err = tic.Accept()
+	if err != nil {
+		return err
+	}
+
+	err = TicketRepo.Save(tic)
+	if err != nil {
+		return err
+	}
+
+	DomainEvents.Publish(event.TicketAccepted{
+		TicketID: tic.ID,
 	})
 
 	return nil

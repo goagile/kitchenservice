@@ -14,4 +14,12 @@ type Event interface{}
 //
 type TicketCreated struct {
 	TicketID ticket.TicketID
+	OrderID  int64
+}
+
+//
+// TicketAccepted
+//
+type TicketAccepted struct {
+	TicketID ticket.TicketID
 }

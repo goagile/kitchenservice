@@ -14,9 +14,16 @@ func init() {
 }
 
 func TestMain(m *testing.M) {
+	// setup
 	ResetSeq("tickets_ticket_id_seq")
 	DeleteAll("tickets")
-	os.Exit(m.Run())
+
+	code := m.Run()
+
+	// teardown
+	DeleteAll("tickets")
+
+	os.Exit(code)
 }
 
 //
