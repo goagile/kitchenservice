@@ -23,3 +23,24 @@ type TicketCreated struct {
 type TicketAccepted struct {
 	TicketID ticket.TicketID
 }
+
+//
+// TicketPrepared
+//
+type TicketPrepared struct {
+	TicketID ticket.TicketID
+}
+
+//
+// TicketReadyToPickUp
+//
+type TicketReadyToPickUp struct {
+	TicketID ticket.TicketID
+}
+
+//
+// TicketCancelled
+//
+type TicketCancelled struct {
+	TicketID ticket.TicketID
+}

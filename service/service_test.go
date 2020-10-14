@@ -38,7 +38,7 @@ func Test_CreateTicket_Publish_TicketCreated(t *testing.T) {
 		}
 	})
 
-	err := CreateTicket(TicketDetails{OrderID: 123})
+	_, err := CreateTicket(TicketDetails{OrderID: 123})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,16 +51,7 @@ func Test_CreateTicket_Publish_TicketCreated(t *testing.T) {
 func Test_CreateTicket_Save_Ticket(t *testing.T) {
 	want := int64(123)
 
-	var id ticket.TicketID
-
-	DomainEvents.AddFunc(func(e event.Event) {
-		switch v := e.(type) {
-		case event.TicketCreated:
-			id = v.TicketID
-		}
-	})
-
-	err := CreateTicket(TicketDetails{OrderID: int64(123)})
+	id, err := CreateTicket(TicketDetails{OrderID: want})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,21 +94,171 @@ func Test_AcceptTicket_Publish_TicketAccepted(t *testing.T) {
 func Test_AcceptTicket_Update_Ticket(t *testing.T) {
 	want := ticket.Accepted
 
-	var id ticket.TicketID
-
-	DomainEvents.AddFunc(func(e event.Event) {
-		switch v := e.(type) {
-		case event.TicketCreated:
-			id = v.TicketID
-		}
-	})
-
-	err := CreateTicket(TicketDetails{})
+	id, err := CreateTicket(TicketDetails{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	err = AcceptTicket(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tic, err := TicketRepo.Find(id)
+	if err != nil {
+		t.Fatalf("TicketRepo.Find: %v\n", err)
+	}
+
+	got := tic.State
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
+	}
+}
+
+//
+// PrepareTicket
+//
+func Test_PrepareTicket_Publish_TicketPrepared(t *testing.T) {
+	want, got := true, false
+
+	DomainEvents.AddFunc(func(e event.Event) {
+		switch e.(type) {
+		case event.TicketPrepared:
+			got = true
+		}
+	})
+
+	err := PrepareTicket(ticket.TicketID(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
+	}
+}
+
+func Test_PrepareTicket_Update_Ticket(t *testing.T) {
+	want := ticket.Prepared
+
+	id, err := CreateTicket(TicketDetails{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = AcceptTicket(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = PrepareTicket(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tic, err := TicketRepo.Find(id)
+	if err != nil {
+		t.Fatalf("TicketRepo.Find: %v\n", err)
+	}
+
+	got := tic.State
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
+	}
+}
+
+//
+// ReadyToPickUp
+//
+func Test_ReadyToPickUpTicket_Publish_TicketReadyToPickUp(t *testing.T) {
+	want, got := true, false
+
+	DomainEvents.AddFunc(func(e event.Event) {
+		switch e.(type) {
+		case event.TicketReadyToPickUp:
+			got = true
+		}
+	})
+
+	err := ReadyToPickUp(ticket.TicketID(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
+	}
+}
+
+func Test_ReadyToPickUp_Update_Ticket(t *testing.T) {
+	want := ticket.ReadyToPickUp
+
+	id, err := CreateTicket(TicketDetails{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = AcceptTicket(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = PrepareTicket(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = ReadyToPickUp(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tic, err := TicketRepo.Find(id)
+	if err != nil {
+		t.Fatalf("TicketRepo.Find: %v\n", err)
+	}
+
+	got := tic.State
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
+	}
+}
+
+//
+// Cancel
+//
+func Test_CancelTicket_Publish_TicketCancelled(t *testing.T) {
+	want, got := true, false
+
+	DomainEvents.AddFunc(func(e event.Event) {
+		switch e.(type) {
+		case event.TicketCancelled:
+			got = true
+		}
+	})
+
+	err := Cancel(ticket.TicketID(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want != got {
+		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
+	}
+}
+
+func Test_Cancel_Update_Ticket(t *testing.T) {
+	want := ticket.Cancelled
+
+	id, err := CreateTicket(TicketDetails{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = Cancel(id)
 	if err != nil {
 		t.Fatal(err)
 	}

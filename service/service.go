@@ -36,16 +36,16 @@ type TicketDetails struct {
 //
 // CreateTicket
 //
-func CreateTicket(details TicketDetails) error {
+func CreateTicket(details TicketDetails) (ticket.TicketID, error) {
 	id, err := TicketRepo.NextID()
 	if err != nil {
-		return err
+		return id, err
 	}
 
 	tic := ticket.New(id)
 	tic.OrderID = details.OrderID
 	if err := TicketRepo.Save(tic); err != nil {
-		return err
+		return id, err
 	}
 
 	DomainEvents.Publish(event.TicketCreated{
@@ -53,7 +53,7 @@ func CreateTicket(details TicketDetails) error {
 		OrderID:  tic.OrderID,
 	})
 
-	return nil
+	return id, nil
 }
 
 //
@@ -76,6 +76,84 @@ func AcceptTicket(id ticket.TicketID) error {
 	}
 
 	DomainEvents.Publish(event.TicketAccepted{
+		TicketID: tic.ID,
+	})
+
+	return nil
+}
+
+//
+// PrepareTicket
+//
+func PrepareTicket(id ticket.TicketID) error {
+	tic, err := TicketRepo.Find(id)
+	if err != nil {
+		return err
+	}
+
+	err = tic.Prepare()
+	if err != nil {
+		return err
+	}
+
+	err = TicketRepo.Save(tic)
+	if err != nil {
+		return err
+	}
+
+	DomainEvents.Publish(event.TicketPrepared{
+		TicketID: tic.ID,
+	})
+
+	return nil
+}
+
+//
+// ReadyToPickUp
+//
+func ReadyToPickUp(id ticket.TicketID) error {
+	tic, err := TicketRepo.Find(id)
+	if err != nil {
+		return err
+	}
+
+	err = tic.ReadyToPickUp()
+	if err != nil {
+		return err
+	}
+
+	err = TicketRepo.Save(tic)
+	if err != nil {
+		return err
+	}
+
+	DomainEvents.Publish(event.TicketReadyToPickUp{
+		TicketID: tic.ID,
+	})
+
+	return nil
+}
+
+//
+// Cancel
+//
+func Cancel(id ticket.TicketID) error {
+	tic, err := TicketRepo.Find(id)
+	if err != nil {
+		return err
+	}
+
+	err = tic.Cancel()
+	if err != nil {
+		return err
+	}
+
+	err = TicketRepo.Save(tic)
+	if err != nil {
+		return err
+	}
+
+	DomainEvents.Publish(event.TicketCancelled{
 		TicketID: tic.ID,
 	})
 
