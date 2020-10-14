@@ -1,16 +1,18 @@
-package event
+package bus
 
 import (
 	"testing"
+
+	"github.com/goagile/kitchenservice/event"
 )
 
 //
-// AddHandler
+// Add
 //
-func Test_Bus_AddHandler(t *testing.T) {
+func Test_Bus_Add(t *testing.T) {
 	want := 1
 	bus := &Bus{}
-	bus.AddHandler(&funcHandler{})
+	bus.Add(&funcHandler{})
 
 	got := len(bus.handlers)
 
@@ -20,12 +22,12 @@ func Test_Bus_AddHandler(t *testing.T) {
 }
 
 //
-// AddFuncHandler
+// AddFunc
 //
-func Test_Bus_AddFuncHandler(t *testing.T) {
+func Test_Bus_AddFunc(t *testing.T) {
 	want := 1
 	bus := &Bus{}
-	bus.AddFuncHandler(func(e Event) {})
+	bus.AddFunc(func(e event.Event) {})
 
 	got := len(bus.handlers)
 
@@ -42,11 +44,11 @@ func Test_Bus_Publish(t *testing.T) {
 	bus := &Bus{}
 
 	got := false
-	bus.AddFuncHandler(func(e Event) {
+	bus.AddFunc(func(e event.Event) {
 		got = true
 	})
 
-	bus.Publish(EmptyEvent{})
+	bus.Publish(new(event.Event))
 
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
