@@ -1,6 +1,6 @@
 
 migrate_status:
-	cd migrations; \
+	cd ./migrations; \
 	goose postgres "$(KITCHEN_PG)" status
 
 migrate_up:
