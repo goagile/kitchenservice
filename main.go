@@ -3,20 +3,42 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"os"
+
+	"github.com/goagile/kitchenservice/ticket/repo"
 
 	"github.com/Shopify/sarama"
 	"github.com/goagile/kitchenservice/command"
+	"github.com/goagile/kitchenservice/event"
 	"github.com/goagile/kitchenservice/service"
+	"github.com/goagile/kitchenservice/ticket/repo/pg"
+)
+
+const (
+	KafkaBroker          = "127.0.0.1:9092"
+	KitchenCommandsTopic = "kitchen.commands"
+	OrderRepliesTopic    = "order.replies"
 )
 
 var (
-	KafkaBrokers     = []string{"127.0.0.1:9092"}
+	KafkaBrokers     []string
 	KafkaBrokersConf *sarama.Config
+	TicketRepo       repo.TicketRepo
+	DomainEvents     service.Publisher
+	Kitchen          *service.Service
 )
 
 func init() {
+	KafkaBrokers = []string{KafkaBroker}
 	KafkaBrokersConf = sarama.NewConfig()
 	KafkaBrokersConf.Consumer.Return.Errors = true
+	KafkaBrokersConf.Producer.Return.Errors = true
+	KafkaBrokersConf.Producer.Return.Successes = true
+
+	pg.DB = pg.Connected(os.Getenv("KITCHEN_PG"))
+	TicketRepo = pg.NewTicketRepo()
+	DomainEvents = newKafkaPublisher()
+	Kitchen = service.NewService(DomainEvents, OrderRepliesTopic, TicketRepo)
 }
 
 type KafkaMessageEnvelope struct {
@@ -25,16 +47,12 @@ type KafkaMessageEnvelope struct {
 }
 
 func main() {
-	//
-	// KafkaConsume
-	//
 	consumer, err := sarama.NewConsumer(KafkaBrokers, KafkaBrokersConf)
 	if err != nil {
 		log.Fatalf("NewConsumer: %v\n", err)
 	}
 	defer consumer.Close()
-
-	listen(consumer, "test", 0)
+	listen(consumer, KitchenCommandsTopic, 0)
 }
 
 func listen(consumer sarama.Consumer, topic string, partition int32) {
@@ -44,7 +62,7 @@ func listen(consumer sarama.Consumer, topic string, partition int32) {
 	}
 	defer master.Close()
 
-	log.Println("Listen Kafka ...")
+	log.Printf("Listen Kafka Topic %v ... \n", topic)
 
 	for {
 		select {
@@ -61,10 +79,6 @@ func listen(consumer sarama.Consumer, topic string, partition int32) {
 			}
 			switch envelope.Name {
 
-			default:
-				log.Printf("Unknown message name:%v\n", envelope.Name)
-				continue
-
 			case "create_ticket":
 				var c command.CreateTicket
 				err = json.Unmarshal(envelope.Data, &c)
@@ -72,7 +86,7 @@ func listen(consumer sarama.Consumer, topic string, partition int32) {
 					log.Printf("Unmarshal w Data: %v\n", err)
 					continue
 				}
-				id, err := service.CreateTicket(service.TicketDetails{
+				id, err := Kitchen.CreateTicket(service.TicketDetails{
 					OrderID: c.OrderID,
 				})
 				if err != nil {
@@ -88,7 +102,7 @@ func listen(consumer sarama.Consumer, topic string, partition int32) {
 					log.Printf("Unmarshal w Data: %v\n", err)
 					continue
 				}
-				err = service.AcceptTicket(c.TicketID)
+				err = Kitchen.AcceptTicket(c.TicketID)
 				if err != nil {
 					log.Printf("AcceptTicket: %v\n", err)
 					continue
@@ -102,7 +116,7 @@ func listen(consumer sarama.Consumer, topic string, partition int32) {
 					log.Printf("Unmarshal w Data: %v\n", err)
 					continue
 				}
-				err = service.Cancel(c.TicketID)
+				err = Kitchen.Cancel(c.TicketID)
 				if err != nil {
 					log.Printf("AcceptTicket: %v\n", err)
 					continue
@@ -110,5 +124,47 @@ func listen(consumer sarama.Consumer, topic string, partition int32) {
 				log.Printf("Cancelled Ticket with id:%v\n", c.TicketID)
 			}
 		}
+	}
+}
+
+type KafkaPublisher struct {
+	Producer sarama.SyncProducer
+}
+
+func newKafkaPublisher() service.Publisher {
+	producer, err := sarama.NewSyncProducer(KafkaBrokers, KafkaBrokersConf)
+	if err != nil {
+		log.Fatalf("NewSyncProducer: %v\n", err)
+	}
+	// defer producer.Close()
+	return &KafkaPublisher{
+		Producer: producer,
+	}
+}
+
+type KafkaProducerMessageEnvelope struct {
+	Name string      `json:"name"`
+	Data event.Event `json:"data"`
+}
+
+//
+// Publish
+//
+func (k *KafkaPublisher) Publish(topic string, e event.Event) {
+	m := &KafkaProducerMessageEnvelope{
+		Name: e.Name(),
+		Data: e,
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		log.Printf("Marshal %v\n", err)
+	}
+	msg := &sarama.ProducerMessage{
+		Topic: topic,
+		Value: sarama.ByteEncoder(b),
+	}
+	_, _, err = k.Producer.SendMessage(msg)
+	if err != nil {
+		log.Printf("SendMessage %v\n", err)
 	}
 }

@@ -5,17 +5,19 @@ import (
 	"testing"
 
 	"github.com/goagile/kitchenservice/event"
-	"github.com/goagile/kitchenservice/event/bus"
 	"github.com/goagile/kitchenservice/ticket"
 	"github.com/goagile/kitchenservice/ticket/repo/pg"
 	"github.com/goagile/kitchenservice/utils"
 )
 
+func init() {
+	pg.DB = pg.Connected(os.Getenv("KITCHEN_PG"))
+}
+
 func TestMain(m *testing.M) {
 	// setup()
 	pg.ResetSeq("tickets_ticket_id_seq")
 	pg.DeleteAll("tickets")
-	DomainEvents = bus.New()
 	ticket.Clock = utils.NewFakeClock(utils.TestDateTime)
 
 	code := m.Run()
@@ -31,17 +33,16 @@ func TestMain(m *testing.M) {
 func Test_CreateTicket_Publish_TicketCreated(t *testing.T) {
 	want, got := true, false
 
-	DomainEvents.AddFunc(func(e event.Event) {
-		switch e.(type) {
-		case event.TicketCreated:
-			got = true
-		}
-	})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
 
-	_, err := CreateTicket(TicketDetails{OrderID: 123})
+	_, err := Kitchen.CreateTicket(TicketDetails{OrderID: 123})
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	got = DomainEvents.Raised
 
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
@@ -51,7 +52,11 @@ func Test_CreateTicket_Publish_TicketCreated(t *testing.T) {
 func Test_CreateTicket_Save_Ticket(t *testing.T) {
 	want := int64(123)
 
-	id, err := CreateTicket(TicketDetails{OrderID: want})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
+
+	id, err := Kitchen.CreateTicket(TicketDetails{OrderID: want})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,17 +79,16 @@ func Test_CreateTicket_Save_Ticket(t *testing.T) {
 func Test_AcceptTicket_Publish_TicketAccepted(t *testing.T) {
 	want, got := true, false
 
-	DomainEvents.AddFunc(func(e event.Event) {
-		switch e.(type) {
-		case event.TicketAccepted:
-			got = true
-		}
-	})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
 
-	err := AcceptTicket(ticket.TicketID(1))
+	err := Kitchen.AcceptTicket(ticket.TicketID(1))
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	got = DomainEvents.Raised
 
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
@@ -94,12 +98,16 @@ func Test_AcceptTicket_Publish_TicketAccepted(t *testing.T) {
 func Test_AcceptTicket_Update_Ticket(t *testing.T) {
 	want := ticket.Accepted
 
-	id, err := CreateTicket(TicketDetails{})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
+
+	id, err := Kitchen.CreateTicket(TicketDetails{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = AcceptTicket(id)
+	err = Kitchen.AcceptTicket(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,17 +130,16 @@ func Test_AcceptTicket_Update_Ticket(t *testing.T) {
 func Test_PrepareTicket_Publish_TicketPrepared(t *testing.T) {
 	want, got := true, false
 
-	DomainEvents.AddFunc(func(e event.Event) {
-		switch e.(type) {
-		case event.TicketPrepared:
-			got = true
-		}
-	})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
 
-	err := PrepareTicket(ticket.TicketID(1))
+	err := Kitchen.PrepareTicket(ticket.TicketID(1))
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	got = DomainEvents.Raised
 
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
@@ -142,17 +149,21 @@ func Test_PrepareTicket_Publish_TicketPrepared(t *testing.T) {
 func Test_PrepareTicket_Update_Ticket(t *testing.T) {
 	want := ticket.Prepared
 
-	id, err := CreateTicket(TicketDetails{})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
+
+	id, err := Kitchen.CreateTicket(TicketDetails{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = AcceptTicket(id)
+	err = Kitchen.AcceptTicket(id)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = PrepareTicket(id)
+	err = Kitchen.PrepareTicket(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,17 +186,16 @@ func Test_PrepareTicket_Update_Ticket(t *testing.T) {
 func Test_ReadyToPickUpTicket_Publish_TicketReadyToPickUp(t *testing.T) {
 	want, got := true, false
 
-	DomainEvents.AddFunc(func(e event.Event) {
-		switch e.(type) {
-		case event.TicketReadyToPickUp:
-			got = true
-		}
-	})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
 
-	err := ReadyToPickUp(ticket.TicketID(1))
+	err := Kitchen.ReadyToPickUp(ticket.TicketID(1))
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	got = DomainEvents.Raised
 
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
@@ -195,22 +205,26 @@ func Test_ReadyToPickUpTicket_Publish_TicketReadyToPickUp(t *testing.T) {
 func Test_ReadyToPickUp_Update_Ticket(t *testing.T) {
 	want := ticket.ReadyToPickUp
 
-	id, err := CreateTicket(TicketDetails{})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
+
+	id, err := Kitchen.CreateTicket(TicketDetails{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = AcceptTicket(id)
+	err = Kitchen.AcceptTicket(id)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = PrepareTicket(id)
+	err = Kitchen.PrepareTicket(id)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = ReadyToPickUp(id)
+	err = Kitchen.ReadyToPickUp(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,17 +247,16 @@ func Test_ReadyToPickUp_Update_Ticket(t *testing.T) {
 func Test_CancelTicket_Publish_TicketCancelled(t *testing.T) {
 	want, got := true, false
 
-	DomainEvents.AddFunc(func(e event.Event) {
-		switch e.(type) {
-		case event.TicketCancelled:
-			got = true
-		}
-	})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
 
-	err := Cancel(ticket.TicketID(1))
+	err := Kitchen.Cancel(ticket.TicketID(1))
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	got = DomainEvents.Raised
 
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
@@ -253,12 +266,16 @@ func Test_CancelTicket_Publish_TicketCancelled(t *testing.T) {
 func Test_Cancel_Update_Ticket(t *testing.T) {
 	want := ticket.Cancelled
 
-	id, err := CreateTicket(TicketDetails{})
+	DomainEvents := &fakePublisher{}
+	TicketRepo := pg.NewTicketRepo()
+	Kitchen := NewService(DomainEvents, "test", TicketRepo)
+
+	id, err := Kitchen.CreateTicket(TicketDetails{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = Cancel(id)
+	err = Kitchen.Cancel(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,4 +290,12 @@ func Test_Cancel_Update_Ticket(t *testing.T) {
 	if want != got {
 		t.Fatalf("\nwant:%v\ngot:%v\n", want, got)
 	}
+}
+
+type fakePublisher struct {
+	Raised bool
+}
+
+func (p *fakePublisher) Publish(topic string, e event.Event) {
+	p.Raised = true
 }

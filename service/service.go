@@ -1,29 +1,33 @@
 package service
 
 import (
-	"os"
-
 	"github.com/goagile/kitchenservice/event"
-	"github.com/goagile/kitchenservice/event/bus"
 	"github.com/goagile/kitchenservice/ticket"
 	"github.com/goagile/kitchenservice/ticket/repo"
-	"github.com/goagile/kitchenservice/ticket/repo/pg"
 )
 
-//
-// DomainEvents
-//
-var DomainEvents bus.Bus
+type Publisher interface {
+	Publish(topic string, e event.Event)
+}
 
 //
-// TicketRepo
+// NewService
 //
-var TicketRepo repo.TicketRepo
+func NewService(events Publisher, orderRepliesTopic string, ticketRepo repo.TicketRepo) *Service {
+	return &Service{
+		DomainEvents:      events,
+		TicketRepo:        ticketRepo,
+		OrderRepliesTopic: orderRepliesTopic,
+	}
+}
 
-func init() {
-	pg.DB = pg.Connected(os.Getenv("KITCHEN_PG"))
-	TicketRepo = pg.NewTicketRepo()
-	DomainEvents = bus.New()
+//
+// Service
+//
+type Service struct {
+	DomainEvents      Publisher
+	OrderRepliesTopic string
+	TicketRepo        repo.TicketRepo
 }
 
 //
@@ -36,19 +40,19 @@ type TicketDetails struct {
 //
 // CreateTicket
 //
-func CreateTicket(details TicketDetails) (ticket.TicketID, error) {
-	id, err := TicketRepo.NextID()
+func (s *Service) CreateTicket(details TicketDetails) (ticket.TicketID, error) {
+	id, err := s.TicketRepo.NextID()
 	if err != nil {
 		return id, err
 	}
 
 	tic := ticket.New(id)
 	tic.OrderID = details.OrderID
-	if err := TicketRepo.Save(tic); err != nil {
+	if err := s.TicketRepo.Save(tic); err != nil {
 		return id, err
 	}
 
-	DomainEvents.Publish(event.TicketCreated{
+	s.DomainEvents.Publish(s.OrderRepliesTopic, &event.TicketCreated{
 		TicketID: tic.ID,
 		OrderID:  tic.OrderID,
 	})
@@ -59,8 +63,8 @@ func CreateTicket(details TicketDetails) (ticket.TicketID, error) {
 //
 // AcceptTicket
 //
-func AcceptTicket(id ticket.TicketID) error {
-	tic, err := TicketRepo.Find(id)
+func (s *Service) AcceptTicket(id ticket.TicketID) error {
+	tic, err := s.TicketRepo.Find(id)
 	if err != nil {
 		return err
 	}
@@ -70,12 +74,12 @@ func AcceptTicket(id ticket.TicketID) error {
 		return err
 	}
 
-	err = TicketRepo.Save(tic)
+	err = s.TicketRepo.Save(tic)
 	if err != nil {
 		return err
 	}
 
-	DomainEvents.Publish(event.TicketAccepted{
+	s.DomainEvents.Publish(s.OrderRepliesTopic, &event.TicketAccepted{
 		TicketID: tic.ID,
 	})
 
@@ -85,8 +89,8 @@ func AcceptTicket(id ticket.TicketID) error {
 //
 // PrepareTicket
 //
-func PrepareTicket(id ticket.TicketID) error {
-	tic, err := TicketRepo.Find(id)
+func (s *Service) PrepareTicket(id ticket.TicketID) error {
+	tic, err := s.TicketRepo.Find(id)
 	if err != nil {
 		return err
 	}
@@ -96,12 +100,12 @@ func PrepareTicket(id ticket.TicketID) error {
 		return err
 	}
 
-	err = TicketRepo.Save(tic)
+	err = s.TicketRepo.Save(tic)
 	if err != nil {
 		return err
 	}
 
-	DomainEvents.Publish(event.TicketPrepared{
+	s.DomainEvents.Publish(s.OrderRepliesTopic, &event.TicketPrepared{
 		TicketID: tic.ID,
 	})
 
@@ -111,8 +115,8 @@ func PrepareTicket(id ticket.TicketID) error {
 //
 // ReadyToPickUp
 //
-func ReadyToPickUp(id ticket.TicketID) error {
-	tic, err := TicketRepo.Find(id)
+func (s *Service) ReadyToPickUp(id ticket.TicketID) error {
+	tic, err := s.TicketRepo.Find(id)
 	if err != nil {
 		return err
 	}
@@ -122,12 +126,12 @@ func ReadyToPickUp(id ticket.TicketID) error {
 		return err
 	}
 
-	err = TicketRepo.Save(tic)
+	err = s.TicketRepo.Save(tic)
 	if err != nil {
 		return err
 	}
 
-	DomainEvents.Publish(event.TicketReadyToPickUp{
+	s.DomainEvents.Publish(s.OrderRepliesTopic, &event.TicketReadyToPickUp{
 		TicketID: tic.ID,
 	})
 
@@ -137,8 +141,8 @@ func ReadyToPickUp(id ticket.TicketID) error {
 //
 // Cancel
 //
-func Cancel(id ticket.TicketID) error {
-	tic, err := TicketRepo.Find(id)
+func (s *Service) Cancel(id ticket.TicketID) error {
+	tic, err := s.TicketRepo.Find(id)
 	if err != nil {
 		return err
 	}
@@ -148,12 +152,12 @@ func Cancel(id ticket.TicketID) error {
 		return err
 	}
 
-	err = TicketRepo.Save(tic)
+	err = s.TicketRepo.Save(tic)
 	if err != nil {
 		return err
 	}
 
-	DomainEvents.Publish(event.TicketCancelled{
+	s.DomainEvents.Publish(s.OrderRepliesTopic, &event.TicketCancelled{
 		TicketID: tic.ID,
 	})
 

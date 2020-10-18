@@ -7,7 +7,9 @@ import (
 //
 // Event
 //
-type Event interface{}
+type Event interface {
+	Name() string
+}
 
 //
 // TicketCreated
