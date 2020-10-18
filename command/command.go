@@ -12,13 +12,6 @@ type CreateTicket struct {
 }
 
 //
-// Name
-//
-func (c *CreateTicket) Name() string {
-	return "create_ticket"
-}
-
-//
 // AcceptTicket
 //
 type AcceptTicket struct {
@@ -26,8 +19,8 @@ type AcceptTicket struct {
 }
 
 //
-// Name
+// CancelTicket
 //
-func (c *AcceptTicket) Name() string {
-	return "accept_ticket"
+type CancelTicket struct {
+	TicketID ticket.TicketID `json:"ticket_id"`
 }
