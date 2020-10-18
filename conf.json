@@ -1,0 +1,11 @@
+{
+    "KafkaBroker": "127.0.0.1:9092",
+    "KitchenCommandsTopic": "kitchen.commands",
+    "OrderRepliesTopic": "order.replies",
+
+    "DBHost": "127.0.0.1", 
+    "DBPort": "5432",
+    "DBName": "kitchen",
+    "DBUser": "kitchenadmin",
+    "DBPassword": "admin"
+}

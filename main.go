@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"os"
 
@@ -14,13 +15,33 @@ import (
 	"github.com/goagile/kitchenservice/ticket/repo/pg"
 )
 
-const (
-	KafkaBroker          = "127.0.0.1:9092"
-	KitchenCommandsTopic = "kitchen.commands"
-	OrderRepliesTopic    = "order.replies"
-)
+type Config struct {
+	KafkaBroker          string
+	KitchenCommandsTopic string
+	OrderRepliesTopic    string
+	DBHost               string
+	DBPort               string
+	DBName               string
+	DBUser               string
+	DBPassword           string
+}
+
+func GetConfig(path string) *Config {
+	var conf *Config
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("GetConfig %v %v", path, err)
+	}
+	d := json.NewDecoder(file)
+	err = d.Decode(&conf)
+	if err != nil {
+		log.Fatalf("GetConfig %v %v", path, err)
+	}
+	return conf
+}
 
 var (
+	Conf             *Config
 	KafkaBrokers     []string
 	KafkaBrokersConf *sarama.Config
 	TicketRepo       repo.TicketRepo
@@ -29,7 +50,12 @@ var (
 )
 
 func init() {
-	KafkaBrokers = []string{KafkaBroker}
+	var confPath string
+	flag.StringVar(&confPath, "c", "conf.json", "configuration file")
+	flag.Parse()
+	Conf = GetConfig(confPath)
+
+	KafkaBrokers = []string{Conf.KafkaBroker}
 	KafkaBrokersConf = sarama.NewConfig()
 	KafkaBrokersConf.Consumer.Return.Errors = true
 	KafkaBrokersConf.Producer.Return.Errors = true
@@ -38,7 +64,7 @@ func init() {
 	pg.DB = pg.Connected(os.Getenv("KITCHEN_PG"))
 	TicketRepo = pg.NewTicketRepo()
 	DomainEvents = newKafkaPublisher()
-	Kitchen = service.NewService(DomainEvents, OrderRepliesTopic, TicketRepo)
+	Kitchen = service.NewService(DomainEvents, Conf.OrderRepliesTopic, TicketRepo)
 }
 
 type KafkaMessageEnvelope struct {
@@ -52,7 +78,7 @@ func main() {
 		log.Fatalf("NewConsumer: %v\n", err)
 	}
 	defer consumer.Close()
-	listen(consumer, KitchenCommandsTopic, 0)
+	listen(consumer, Conf.KitchenCommandsTopic, 0)
 }
 
 func listen(consumer sarama.Consumer, topic string, partition int32) {
